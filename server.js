@@ -10,7 +10,14 @@ const jwt = require('jsonwebtoken');
 const { cert, initializeApp } = require('firebase-admin/app');
 const { getAuth } = require('firebase-admin/auth');
 const { getDatabase } = require('firebase-admin/database');
-const serviceAccount = require('./firebase-key.json');
+let serviceAccount;
+if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    // Jika berjalan di cloud (Railway), baca dari Environment Variable
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+} else {
+    // Jika berjalan di laptop (lokal), baca dari file fisik
+    serviceAccount = require('./firebase-key.json');
+}
 
 const firebaseApp = initializeApp({
   credential: cert(serviceAccount),
