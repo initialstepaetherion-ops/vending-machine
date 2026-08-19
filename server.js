@@ -8,17 +8,15 @@ const midtransClient = require('midtrans-client');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 const admin = require("firebase-admin");
-
-let credentialObj;
-if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-    credentialObj = admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT));
-} else {
-    const serviceAccount = require("./firebase-key.json");
-    credentialObj = admin.credential.cert(serviceAccount);
+// Pastikan membaca dari Environment Variable Railway
+let serviceAccount;
+try {
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+} catch (e) {
+    console.error("Gagal memparsing FIREBASE_SERVICE_ACCOUNT dari environment variables!");
 }
-
 admin.initializeApp({
-  credential: credentialObj,
+  credential: admin.credential.cert(serviceAccount),
   databaseURL: "https://vending-machine-a267f-default-rtdb.asia-southeast1.firebasedatabase.app"
 });
 
