@@ -8,8 +8,9 @@ const midtransClient = require('midtrans-client');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 const admin = require("firebase-admin");
+const { getDatabase } = require('firebase-admin/database');
 admin.initializeApp({
-  credential: admin.credential.cert({
+  credential: admin.cert({
     projectId: process.env.FIREBASE_PROJECT_ID,
     privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL
@@ -17,7 +18,7 @@ admin.initializeApp({
   databaseURL: "https://vending-machine-a267f-default-rtdb.asia-southeast1.firebasedatabase.app"
 });
 
-const db = admin.database();
+const db = getDatabase();
 const app = express();
 
 let snap = new midtransClient.Snap({
