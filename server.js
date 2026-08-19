@@ -8,17 +8,37 @@ const midtransClient = require('midtrans-client');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 const admin = require("firebase-admin");
+const { getAuth } = require('firebase-admin/auth');
 const { getDatabase } = require('firebase-admin/database');
+
+const firebasePrivateKey = process.env.FIREBASE_PRIVATE_KEY_BASE64
+  ? Buffer.from(process.env.FIREBASE_PRIVATE_KEY_BASE64, 'base64').toString('utf8')
+  : process.env.FIREBASE_PRIVATE_KEY
+    ?.trim()
+    .replace(/^['"]|['"]$/g, '')
+    .replace(/\\n/g, '\n');
+const missingFirebaseVariables = ['FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL']
+  .filter((name) => !process.env[name]);
+
+if (!firebasePrivateKey) {
+  missingFirebaseVariables.push('FIREBASE_PRIVATE_KEY atau FIREBASE_PRIVATE_KEY_BASE64');
+}
+
+if (missingFirebaseVariables.length > 0) {
+  throw new Error(`Konfigurasi Firebase tidak lengkap: ${missingFirebaseVariables.join(', ')}`);
+}
+
 admin.initializeApp({
   credential: admin.cert({
     projectId: process.env.FIREBASE_PROJECT_ID,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
+    privateKey: firebasePrivateKey,
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL
   }),
   databaseURL: "https://vending-machine-a267f-default-rtdb.asia-southeast1.firebasedatabase.app"
 });
 
 const db = getDatabase();
+const auth = getAuth();
 const app = express();
 
 let snap = new midtransClient.Snap({
@@ -56,7 +76,7 @@ app.post('/api/upload', upload.single('foto'), (req, res) => {
 app.post('/api/login', async (req, res) => {
   const { idToken, email } = req.body;
   try {
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const decodedToken = await auth.verifyIdToken(idToken);
     if (decodedToken.email !== email) {
       return res.status(401).json({ success: false, error: "Email tidak cocok" });
     }
