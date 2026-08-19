@@ -8,12 +8,13 @@ const midtransClient = require('midtrans-client');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 const admin = require("firebase-admin");
-// Pastikan membaca dari Environment Variable Railway
 let serviceAccount;
 try {
-    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    // Bersihkan spasi atau karakter newline yang tidak sengaja ter-copy di Railway
+    let rawEnv = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
+    serviceAccount = JSON.parse(rawEnv);
 } catch (e) {
-    console.error("Gagal memparsing FIREBASE_SERVICE_ACCOUNT dari environment variables!");
+    console.error("Format JSON FIREBASE_SERVICE_ACCOUNT di Railway salah!", e.message);
 }
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
