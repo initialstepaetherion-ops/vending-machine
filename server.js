@@ -10,11 +10,13 @@ const jwt = require('jsonwebtoken');
 const admin = require("firebase-admin");
 let serviceAccount;
 try {
-    // Bersihkan spasi atau karakter newline yang tidak sengaja ter-copy di Railway
-    let rawEnv = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
-    serviceAccount = JSON.parse(rawEnv);
+    if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
+        throw new Error("Variabel FIREBASE_SERVICE_ACCOUNT kosong atau belum diset di Railway!");
+    }
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT.trim());
 } catch (e) {
-    console.error("Format JSON FIREBASE_SERVICE_ACCOUNT di Railway salah!", e.message);
+    console.error("ERROR FIREBASE:", e.message);
+    process.exit(1); // Menghentikan server dengan aman agar error-nya jelas terbaca di log
 }
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
