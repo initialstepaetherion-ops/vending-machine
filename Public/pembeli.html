@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Etalase Mesin A1 - Lapak Mini</title>
+    
+    <!-- 1. PANGGIL SCRIPT MIDTRANS SNAP DI SINI -->
+    <script type="text/javascript"
+            src="https://app.sandbox.midtrans.com/snap/snap.js"
+            data-client-key="Mid-client-NJdNK-r3RlldIXH_"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background: #f4f6f9; color: #333; }
+        header { background: linear-gradient(135deg, #c21564 0%, #290a42 100%); color: white; padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; }
+        .back-btn { color: white; text-decoration: none; font-weight: bold; }
+        .container { padding: 40px 50px; }
+        h2 { margin-bottom: 20px; color: #290a42; }
+        .grid-barang { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .produk-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: relative; padding-bottom: 15px; }
+        .produk-card img { width: 100%; height: 200px; object-fit: cover; }
+        .produk-info { padding: 15px; }
+        .harga { color: #c21564; font-weight: bold; font-size: 1.2rem; margin: 5px 0; }
+        .stok { font-size: 0.85rem; color: #7f8c8d; }
+        .btn-beli { width: 90%; margin: 10px 5%; padding: 10px; background: #290a42; color: white; border: none; border-radius: 25px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-beli:hover { background: #5d2485; }
+        .btn-beli:disabled { background: #bdc3c7; cursor: not-allowed; }
+        .badge-best { position: absolute; top: 10px; right: 10px; background: #f1c40f; color: #000; padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+        .habis-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 200px; background: rgba(255,255,255,0.6); display: flex; justify-content: center; align-items: center; font-size: 1.5rem; font-weight: bold; color: #c0392b; backdrop-filter: grayscale(100%); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="back-btn">← Kembali</a>
+        <h3>Lapak Fakultas Teknik (Mesin A1)</h3>
+        <div>🛒 Keranjang</div>
+    </header>
+
+    <div class="container">
+        <h2>Pilih Barang Anda</h2>
+        <div class="grid-barang" id="etalase">
+            <p>Memuat data dari Firebase...</p>
+        </div>
+    </div>
+
+    <script>
+        let semuaBarang = {};
+
+        async function muatBarang() {
+            const etalase = document.getElementById('etalase');
+            try {
+                const response = await fetch('/api/barang');
+                semuaBarang = await response.json();
+                
+                let terjualTertinggi = 0;
+                let idBestSeller = '';
+                for (let key in semuaBarang) {
+                    if (semuaBarang[key].terjual > terjualTertinggi) {
+                        terjualTertinggi = semuaBarang[key].terjual;
+                        idBestSeller = key;
+                    }
+                }
+
+                etalase.innerHTML = '';
+
+                for (let key in semuaBarang) {
+                    let barang = semuaBarang[key];
+                    let isHabis = barang.stok_sekarang === 0;
+                    let isBestSeller = (key === idBestSeller);
+
+                    let htmlKartu = `
+                        <div class="produk-card">
+                            ${isBestSeller && !isHabis ? '<div class="badge-best">🔥 Paling Banyak Dibeli</div>' : ''}
+                            <img src="${barang.foto_url}" alt="${barang.nama_barang}">
+                            ${isHabis ? '<div class="habis-overlay">STOK HABIS</div>' : ''}
+                            <div class="produk-info">
+                                <h4>${barang.nama_barang}</h4>
+                                <p class="harga">Rp ${barang.harga.toLocaleString('id-ID')}</p>
+                                <p class="stok">Sisa Stok: ${barang.stok_sekarang}</p>
+                            </div>
+                            <!-- Logika baru: Panggil fungsi beliDenganMidtrans -->
+                            <button class="btn-beli" id="btn-${key}" ${isHabis ? 'disabled' : ''} 
+                                onclick="beliDenganMidtrans('${key}', '${barang.nama_barang}', ${barang.harga})">
+                                ${isHabis ? 'HABIS' : 'Beli & Bayar (QRIS)'}
+                            </button>
+                        </div>
+                    `;
+                    etalase.innerHTML += htmlKartu;
+                }
+            } catch (error) {
+                etalase.innerHTML = '<p>Gagal mengambil data.</p>';
+            }
+        }
+
+        // 2. LOGIKA UTAMA MIDTRANS
+        async function beliDenganMidtrans(idSlot, namaBarang, hargaBarang) {
+            const btn = document.getElementById(`btn-${idSlot}`);
+            btn.innerText = "Memuat Pembayaran...";
+            btn.disabled = true;
+
+            try {
+                // A. Minta Token ke Server Kita
+                const resToken = await fetch('/api/buat-transaksi', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id_slot: idSlot, nama_barang: namaBarang, harga: hargaBarang })
+                });
+                const dataToken = await resToken.json();
+
+                if (dataToken.success) {
+                    // B. Munculkan Popup Midtrans menggunakan Token tersebut
+                    window.snap.pay(dataToken.token, {
+                        // C. Jika pembeli sukses membayar
+                        onSuccess: async function(result) {
+                            alert("Pembayaran Berhasil! Memproses mesin...");
+                            
+                            // Tembak API Checkout lama kita untuk memotong stok & memutar mesin
+                            await fetch('/api/checkout', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ id_slot: idSlot })
+                            });
+                            
+                            muatBarang(); // Refresh halaman
+                        },
+                        onPending: function(result) {
+                            alert("Menunggu pembayaran...");
+                        },
+                        onError: function(result) {
+                            alert("Pembayaran gagal!");
+                        },
+                        onClose: function() {
+                            alert("Anda menutup halaman pembayaran sebelum menyelesaikannya.");
+                        }
+                    });
+                }
+            } catch (error) {
+                alert("Terjadi kesalahan jaringan.");
+            } finally {
+                btn.innerText = "Beli & Bayar (QRIS)";
+                btn.disabled = false;
+            }
+        }
+
+        muatBarang();
+    </script>
+</body>
+</html>

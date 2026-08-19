@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vending Machine Pintar</title>
+    <style>
+        /* === PENGATURAN DASAR === */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #c21564 0%, #290a42 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* === NAVBAR === */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 30px 50px;
+        }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo span {
+            border: 1px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: normal;
+        }
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .btn-outline {
+            border: 2px solid white;
+            background: transparent;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .btn-outline:hover {
+            background: white;
+            color: #290a42;
+        }
+
+        /* === HERO SECTION === */
+        .hero {
+            text-align: center;
+            margin-top: 60px;
+            padding: 0 20px;
+        }
+        .hero h1 {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+        .hero p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 50px;
+        }
+
+        /* Logo Pembayaran / Universitas */
+        .supported-logos {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 50px;
+            opacity: 0.8;
+            font-weight: bold;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+        }
+
+        /* === CALL TO ACTION === */
+        .cta-section {
+            text-align: center;
+            margin-bottom: 70px;
+        }
+        .cta-section p {
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+        .btn-solid {
+            background: white;
+            color: #290a42;
+            border: none;
+            padding: 15px 35px;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: 0.3s;
+        }
+        .btn-solid:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        /* === ROLE CARDS (Kartu Peran) === */
+        .cards-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 0 50px 50px 50px;
+            flex-wrap: wrap;
+        }
+        .card {
+            background: #4a1c6a; 
+            width: 300px;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: 0.3s;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .card:hover {
+            transform: translateY(-10px);
+            background: #5d2485;
+        }
+        .card-header {
+            padding: 20px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .card-body {
+            padding: 20px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+            height: 100px;
+            
+        }
+
+        /* === CARA KERJA SECTION === */
+        .how-it-works { background: #ffffff; padding: 40px 20px; margin-top: 40px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .how-it-works h2 { text-align: center; color: #1a0629; margin-bottom: 30px; font-size: 1.8rem; }
+        .steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        .step-card { background: #f8f9fa; padding: 20px; border-radius: 10px; border-top: 4px solid #c21564; text-align: center; transition: transform 0.3s; }
+        .step-card:hover { transform: translateY(-5px); }
+        .step-number { font-size: 1.5rem; font-weight: bold; color: #c21564; margin-bottom: 10px; }
+        .step-card h3 { font-size: 1.1rem; color: #1a0629; margin-bottom: 8px; }
+        .step-card p { font-size: 0.9rem; color: #666; line-height: 1.4; }
+
+        /* === PANDUAN PEMBELIAN === */
+        .how-to-buy { background: #1a0629; color: #ffffff; padding: 40px 20px; margin-top: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .how-to-buy h2 { text-align: center; color: #ffffff; margin-bottom: 30px; font-size: 1.8rem; }
+        .buy-steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        .buy-step-card { background: #290a42; padding: 20px; border-radius: 10px; border-top: 4px solid #3498db; text-align: center; }
+        .buy-step-number { font-size: 1.5rem; font-weight: bold; color: #3498db; margin-bottom: 10px; }
+        .buy-step-card h3 { font-size: 1.1rem; color: #ffffff; margin-bottom: 8px; }
+        .buy-step-card p { font-size: 0.9rem; color: #ddd; line-height: 1.4; }
+        
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">
+            <span>V</span> LAPAK MINI
+        </div>
+        <div class="nav-links">
+            <a href="#">Cara Kerja ˇ</a>
+            <a href="#">Lokasi Mesin ˇ</a>
+            <button class="btn-outline" onclick="window.location.href='admin.html'">LOGIN ADMIN</button>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <h1>Vending Machine as a Service</h1>
+        <p>Platform penyewaan lapak mesin otomatis pertama untuk mahasiswa. Jualan lebih mudah tanpa harus jaga lapak.</p>
+    </div>
+
+    <div class="supported-logos">
+        <span>QRIS</span>
+        <span>GoPay</span>
+        <span>DANA</span>
+        <span>UI</span>
+        <span>UGM</span>
+        <span>ITB</span>
+    </div>
+
+    <div class="cta-section">
+        <p>Siap untuk membeli atau menyewa lapak mesin hari ini?</p>
+        <button class="btn-solid" onclick="window.location.href='pembeli.html'">MULAI TRANSAKSI</button>
+    </div>
+
+    <div class="cards-container">
+        
+        <!-- KARTU PEMBELI (SUDAH DITAMBAHKAN ONCLICK DISINI) -->
+        <div class="card" onclick="window.location.href='pembeli.html'">
+            <div class="card-header">Sebagai Pembeli</div>
+            <div class="card-body">
+                Lihat daftar barang, cek ketersediaan stok, dan beli produk favoritmu langsung dari mesin terdekat.
+            </div>
+        </div>
+
+        <!-- Kartu Penjual -->
+        <div class="card" onclick="window.location.href='penjual.html'">
+            <div class="card-header">Sebagai Penjual</div>
+            <div class="card-body">
+                Sewa slot lapak, atur harga, dan pantau penjualan harianmu langsung dari dasbor ini.
+            </div>
+        </div>
+
+        <!-- Kartu Admin -->
+        <div class="card" onclick="window.location.href='admin.html'">
+            <div class="card-header">Pemilik Mesin</div>
+            <div class="card-body">
+                Kelola pendaftaran mesin, konfirmasi penyewa, dan pantau penghasilan pasif Anda.
+            </div>
+        </div>
+    </div>
+
+    <!-- === BAGIAN CARA KERJA === -->
+    <div class="how-it-works">
+        <h2>⚙️ Bagaimana Sistem Pintar Ini Bekerja?</h2>
+        <div class="steps-grid">
+            
+            <div class="step-card">
+                <div class="step-number">01</div>
+                <h3>Pilih & Scan QRIS</h3>
+                <p>Pengunjung memilih barang di web, lalu memindai kode QRIS atau GoPay menggunakan *gateway* pembayaran Midtrans.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">02</div>
+                <h3>Verifikasi Server (Node.js)</h3>
+                <p>Server pusat menerima notifikasi pembayaran lunas, lalu secara otomatis memperbarui sisa stok di *database* Firebase.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">03</div>
+                <h3>Sinyal Real-Time IoT</h3>
+                <p>Server mengirimkan perintah pemicu (*trigger*) ke *database* cloud yang langsung dibaca oleh mikrokontroler ESP32.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">04</div>
+                <h3>Eksekusi Mekanik</h3>
+                <p>ESP32 menggerakkan motor laci secara presisi untuk menjatuhkan barang pesanan ke tangan pembeli di dunia nyata!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- === BAGIAN PANDUAN PEMBELIAN === -->
+    <div class="how-to-buy">
+        <h2>🛍️ Panduan Cara Membeli Barang</h2>
+        <div class="buy-steps-grid">
+            
+            <div class="buy-step-card">
+                <div class="buy-step-number">Langkah 1</div>
+                <h3>Pilih Barang</h3>
+                <p>Lihat daftar produk yang tersedia di layar halaman utama, lalu tentukan barang atau laci mana yang ingin kamu beli.</p>
+            </div>
+            <div class="buy-step-card" style="border-top-color: #e94560;">
+                <div class="buy-step-number" style="color: #e94560;">Langkah 2</div>
+                <h3>Klik Tombol Beli</h3>
+                <p>Tekan tombol "Beli" pada produk pilihanmu. Jendela pembayaran Midtrans akan otomatis muncul di layar.</p>
+            </div>
+            <div class="buy-step-card" style="border-top-color: #f1c40f;">
+                <div class="buy-step-number" style="color: #f1c40f;">Langkah 3</div>
+                <h3>Selesaikan Pembayaran</h3>
+                <p>Pilih metode pembayaran (QRIS atau GoPay), lalu lakukan pembayaran sesuai instruksi atau tombol simulasi.</p>
+            </div>
+            <div class="buy-step-card" style="border-top-color: #2ecc71;">
+                <div class="buy-step-number" style="color: #2ecc71;">Langkah 4</div>
+                <h3>Ambil Barangmu</h3>
+                <p>Setelah pembayaran terkonfirmasi lunas, mesin akan berputar otomatis dan barangmu akan jatuh ke laci pengambilan!</p>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

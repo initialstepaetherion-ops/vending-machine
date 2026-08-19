@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dasbor Penjual - Lapak Mini</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background: #f4f6f9; color: #333; }
+        header { background: linear-gradient(135deg, #4a1c6a 0%, #1a0629 100%); color: white; padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; }
+        .back-btn { color: white; text-decoration: none; font-weight: bold; }
+        .container { padding: 40px 50px; max-width: 800px; margin: 0 auto; }
+        .dashboard-card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h2 { color: #4a1c6a; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; }
+        input[type="file"] { background: #f9f9f9; cursor: pointer; padding: 9px; }
+        .alert-box { background: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #ffeeba; font-size: 0.9rem; }
+        .btn-save { background: #c21564; color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        .btn-save:hover { background: #a01050; }
+        
+        /* Area Pratinjau Foto */
+        .preview-box { border: 2px dashed #ccc; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 10px; background: #fafafa; }
+        #previewFoto { max-width: 150px; max-height: 150px; border-radius: 8px; display: none; margin: 0 auto; object-fit: cover; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="back-btn">← Kembali ke Beranda</a>
+        <h3>Ruang Kendali Penjual</h3>
+        <div>👤 Halo, Mahasiswa!</div>
+    </header>
+
+    <div class="container">
+        <div class="dashboard-card">
+            <h2>Manajemen Lapak & Restock Barang</h2>
+            
+            <div class="alert-box">
+                <strong>⚠️ PERHATIAN:</strong> Pastikan angka <b>Stok Fisik</b> SAMA PERSIS dengan jumlah fisik di dalam laci ulir mesin!
+            </div>
+
+            <form id="formPenjual">
+                <div class="form-group">
+                    <label>Pilih Slot Lapak Anda:</label>
+                    <select id="pilihSlot" onchange="muatDataSlot()">
+                        <option value="" disabled selected>-- Pilih Slot Mesin --</option>
+                        <option value="slot_1">Slot 1 (Gerbang Kiri Atas)</option>
+                        <option value="slot_2">Slot 2 (Gerbang Kanan Atas)</option>
+                        <option value="slot_3">Slot 3 (Gerbang Kiri Bawah)</option>
+                        <option value="slot_4">Slot 4 (Gerbang Kanan Bawah)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Nama Barang Jualan:</label>
+                    <input type="text" id="namaBarang" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Harga Satuan (Rp):</label>
+                    <input type="number" id="hargaBarang" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Stok Fisik Saat Ini (Restock):</label>
+                    <input type="number" id="stokBarang" required>
+                </div>
+
+                <!-- Ganti Input Teks menjadi Input File & Preview -->
+                <div class="form-group">
+                    <label>Foto Barang:</label>
+                    <div class="preview-box">
+                        <img id="previewFoto" src="" alt="Pratinjau Foto">
+                        <p id="teksPreview" style="color:#999; font-size:0.9rem; margin-top:5px;">Pilih slot untuk melihat foto</p>
+                    </div>
+                    <input type="file" id="fileFoto" accept="image/png, image/jpeg, image/jpg">
+                    <input type="hidden" id="fotoLama"> <!-- Menyimpan link lama jika tidak ada foto baru diupload -->
+                </div>
+
+                <button type="submit" class="btn-save">SIMPAN PEMBARUAN</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let semuaDataBarang = {};
+
+        async function muatSemuaData() {
+            try {
+                const response = await fetch('/api/barang');
+                semuaDataBarang = await response.json();
+            } catch (error) {
+                alert('Gagal terhubung ke server.');
+            }
+        }
+
+        // Fungsi saat slot dipilih
+        function muatDataSlot() {
+            const idSlot = document.getElementById('pilihSlot').value;
+            if (idSlot && semuaDataBarang[idSlot]) {
+                const barang = semuaDataBarang[idSlot];
+                document.getElementById('namaBarang').value = barang.nama_barang;
+                document.getElementById('hargaBarang').value = barang.harga;
+                document.getElementById('stokBarang').value = barang.stok_sekarang;
+                
+                // Menampilkan Foto
+                document.getElementById('fotoLama').value = barang.foto_url;
+                document.getElementById('previewFoto').src = barang.foto_url;
+                document.getElementById('previewFoto').style.display = 'block';
+                document.getElementById('teksPreview').style.display = 'none';
+                
+                // Reset file input supaya kosong saat pindah slot
+                document.getElementById('fileFoto').value = ''; 
+            }
+        }
+
+        // Preview langsung saat penjual memilih foto dari komputernya
+        document.getElementById('fileFoto').addEventListener('change', function(e) {
+            if(e.target.files.length > 0) {
+                const urlSementara = URL.createObjectURL(e.target.files[0]);
+                document.getElementById('previewFoto').src = urlSementara;
+                document.getElementById('previewFoto').style.display = 'block';
+                document.getElementById('teksPreview').style.display = 'none';
+            }
+        });
+
+        // Proses Submit Form
+        document.getElementById('formPenjual').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const idSlot = document.getElementById('pilihSlot').value;
+            if (!idSlot) return alert("Pilih slot lapak Anda terlebih dahulu!");
+
+            const btn = document.querySelector('.btn-save');
+            const fileInput = document.getElementById('fileFoto');
+            let finalFotoUrl = document.getElementById('fotoLama').value; // Default pakai foto lama
+
+            try {
+                // LOGIKA BARU: Jika ada file foto dipilih, Upload dulu ke server!
+                if (fileInput.files.length > 0) {
+                    btn.innerText = "MENGUPLOAD FOTO...";
+                    const formData = new FormData();
+                    formData.append('foto', fileInput.files[0]);
+
+                    const uploadResponse = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const uploadResult = await uploadResponse.json();
+                    
+                    if (uploadResult.url) {
+                        finalFotoUrl = uploadResult.url; // Timpa dengan link lokal yang baru
+                    } else {
+                        throw new Error("Gagal mengupload foto");
+                    }
+                }
+
+                btn.innerText = "MENYIMPAN DATA KE FIREBASE...";
+
+                // Kirim data ke Firebase (sama seperti sebelumnya)
+                const dataBaru = {
+                    id_slot: idSlot,
+                    nama_barang: document.getElementById('namaBarang').value,
+                    harga: document.getElementById('hargaBarang').value,
+                    stok_sekarang: document.getElementById('stokBarang').value,
+                    foto_url: finalFotoUrl // Menggunakan foto baru atau lama
+                };
+
+                const response = await fetch('/api/update-barang', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dataBaru)
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    alert('✅ ' + result.message);
+                    muatSemuaData(); 
+                } else {
+                    alert('Gagal: ' + result.error);
+                }
+            } catch (error) {
+                alert('Terjadi kesalahan jaringan atau upload gagal.');
+            } finally {
+                btn.innerText = "SIMPAN PEMBARUAN";
+            }
+        });
+
+        muatSemuaData();
+    </script>
+</body>
+</html>

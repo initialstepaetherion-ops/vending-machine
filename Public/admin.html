@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dasbor Admin - Vending Machine A1</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background: #f4f6f9; color: #333; }
+        
+        /* Tema Gelap Khas Admin */
+        header { background: #1a1a2e; color: white; padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .back-btn { color: #e94560; text-decoration: none; font-weight: bold; }
+        
+        .container { padding: 40px 50px; }
+        h2 { margin-bottom: 20px; color: #1a1a2e; }
+
+        /* Kartu Ringkasan (Statistik) */
+        .statistik-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-left: 5px solid #e94560; }
+        .stat-card h3 { font-size: 0.9rem; color: #7f8c8d; margin-bottom: 5px; }
+        .stat-card p { font-size: 1.8rem; font-weight: bold; color: #1a1a2e; }
+
+        /* Tabel Stok Barang */
+        .tabel-container { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 15px 20px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #1a1a2e; color: white; font-weight: 500; }
+        tr:hover { background: #f8f9fa; }
+        
+        /* Status Warna */
+        .status-aman { color: #27ae60; font-weight: bold; background: #eafaf1; padding: 5px 10px; border-radius: 20px; font-size: 0.85rem;}
+        .status-kritis { color: #e74c3c; font-weight: bold; background: #fdedec; padding: 5px 10px; border-radius: 20px; font-size: 0.85rem;}
+        .status-habis { color: #7f8c8d; font-weight: bold; background: #ebedef; padding: 5px 10px; border-radius: 20px; font-size: 0.85rem;}
+    </style>
+</head>
+<body>
+
+    <header>
+        <h3>⚙️ Ruang Kendali Admin (Mesin A1)</h3>
+        <a href="index.html" class="back-btn">← Keluar</a>
+    </header>
+
+    <div class="container">
+        
+        <!-- Bagian Ringkasan -->
+        <h2>Ringkasan Penjualan</h2>
+        <div class="statistik-grid">
+            <div class="stat-card">
+                <h3>Total Pendapatan Kotor</h3>
+                <p id="total-uang">Rp 0</p>
+            </div>
+            <div class="stat-card" style="border-left-color: #3498db;">
+                <h3>Total Barang Terjual</h3>
+                <p id="total-terjual">0 Item</p>
+            </div>
+            <div class="stat-card" style="border-left-color: #f1c40f;">
+                <h3>Status Mesin Fisik</h3>
+                <p id="status-mesin" style="font-size: 1.2rem; margin-top: 10px;">🟢 Online</p>
+            </div>
+        </div>
+
+        <!-- Bagian Tabel Pantauan -->
+        <h2>Pantauan Stok Laci Mesin</h2>
+        <div class="tabel-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Posisi Laci</th>
+                        <th>Nama Barang</th>
+                        <th>Harga</th>
+                        <th>Terjual</th>
+                        <th>Sisa Stok</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tabel-body">
+                    <tr><td colspan="6" style="text-align: center;">Memuat data dari database...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <script>
+        async function muatDataAdmin() {
+            try {
+                const response = await fetch('/api/barang');
+                const semuaBarang = await response.json();
+                
+                const tabelBody = document.getElementById('tabel-body');
+                tabelBody.innerHTML = '';
+
+                let totalPendapatan = 0;
+                let totalBarangTerjual = 0;
+
+                // Membaca setiap barang dari Firebase
+                for (let key in semuaBarang) {
+                    let barang = semuaBarang[key];
+                    
+                    // Kalkulasi Uang & Terjual
+                    let pendapatanBarangIni = barang.harga * barang.terjual;
+                    totalPendapatan += pendapatanBarangIni;
+                    totalBarangTerjual += barang.terjual;
+
+                    // Menentukan Label Status
+                    let labelStatus = '';
+                    if (barang.stok_sekarang === 0) {
+                        labelStatus = '<span class="status-habis">Habis Total</span>';
+                    } else if (barang.stok_sekarang <= 3) {
+                        labelStatus = '<span class="status-kritis">Stok Kritis</span>';
+                    } else {
+                        labelStatus = '<span class="status-aman">Aman</span>';
+                    }
+
+                    // Membuat Baris Tabel
+                    let baris = `
+                        <tr>
+                            <td><strong>${key.toUpperCase().replace('_', ' ')}</strong></td>
+                            <td>${barang.nama_barang}</td>
+                            <td>Rp ${barang.harga.toLocaleString('id-ID')}</td>
+                            <td>${barang.terjual}</td>
+                            <td><strong>${barang.stok_sekarang}</strong></td>
+                            <td>${labelStatus}</td>
+                        </tr>
+                    `;
+                    tabelBody.innerHTML += baris;
+                }
+
+                // Tampilkan Hasil Kalkulasi ke Kartu Ringkasan
+                document.getElementById('total-uang').innerText = 'Rp ' + totalPendapatan.toLocaleString('id-ID');
+                document.getElementById('total-terjual').innerText = totalBarangTerjual + ' Item';
+
+            } catch (error) {
+                console.error("Gagal mengambil data", error);
+                document.getElementById('tabel-body').innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">Koneksi ke Database Terputus!</td></tr>';
+                document.getElementById('status-mesin').innerText = '🔴 Offline';
+                document.getElementById('status-mesin').style.color = '#e74c3c';
+            }
+        }
+
+        // Jalankan fungsi saat halaman dibuka
+        muatDataAdmin();
+
+        // Refresh data otomatis setiap 10 detik agar admin melihat pergerakan secara real-time
+        setInterval(muatDataAdmin, 10000);
+    </script>
+</body>
+</html>
