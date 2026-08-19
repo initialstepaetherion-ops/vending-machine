@@ -11,12 +11,16 @@ const admin = require("firebase-admin");
 const { getAuth } = require('firebase-admin/auth');
 const { getDatabase } = require('firebase-admin/database');
 
-const firebasePrivateKey = process.env.FIREBASE_PRIVATE_KEY_BASE64
-  ? Buffer.from(process.env.FIREBASE_PRIVATE_KEY_BASE64, 'base64').toString('utf8')
-  : process.env.FIREBASE_PRIVATE_KEY
-    ?.trim()
+// Mengambil private key secara aman dengan dukungan Base64 penuh
+let firebasePrivateKey = process.env.FIREBASE_PRIVATE_KEY;
+if (process.env.FIREBASE_PRIVATE_KEY_BASE64) {
+  firebasePrivateKey = Buffer.from(process.env.FIREBASE_PRIVATE_KEY_BASE64, 'base64').toString('utf8');
+} else if (firebasePrivateKey) {
+  firebasePrivateKey = firebasePrivateKey
+    .trim()
     .replace(/^['"]|['"]$/g, '')
     .replace(/\\n/g, '\n');
+}
 const missingFirebaseVariables = ['FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL']
   .filter((name) => !process.env[name]);
 
