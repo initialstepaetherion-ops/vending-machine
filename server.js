@@ -7,24 +7,22 @@ const fs = require('fs');
 const midtransClient = require('midtrans-client');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
-const { cert, initializeApp } = require('firebase-admin/app');
-const { getAuth } = require('firebase-admin/auth');
-const { getDatabase } = require('firebase-admin/database');
-let serviceAccount;
+const admin = require("firebase-admin");
+
+let credentialObj;
 if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-    // Jika berjalan di cloud (Railway), baca dari Environment Variable
-    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    credentialObj = admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT));
 } else {
-    // Jika berjalan di laptop (lokal), baca dari file fisik
-    serviceAccount = require('./firebase-key.json');
+    const serviceAccount = require("./firebase-key.json");
+    credentialObj = admin.credential.cert(serviceAccount);
 }
 
-const firebaseApp = initializeApp({
-  credential: cert(serviceAccount),
+admin.initializeApp({
+  credential: credentialObj,
   databaseURL: "https://vending-machine-a267f-default-rtdb.asia-southeast1.firebasedatabase.app"
 });
 
-const db = getDatabase(firebaseApp);
+const db = admin.database();
 const app = express();
 
 let snap = new midtransClient.Snap({
@@ -62,7 +60,7 @@ app.post('/api/upload', upload.single('foto'), (req, res) => {
 app.post('/api/login', async (req, res) => {
   const { idToken, email } = req.body;
   try {
-    const decodedToken = await getAuth(firebaseApp).verifyIdToken(idToken);
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
     if (decodedToken.email !== email) {
       return res.status(401).json({ success: false, error: "Email tidak cocok" });
     }
