@@ -34,6 +34,19 @@
         .status-habis { color: #7f8c8d; font-weight: bold; background: #ebedef; padding: 5px 10px; border-radius: 20px; font-size: 0.85rem;}
         .contact-footer { padding: 24px 20px; text-align: center; color: #666; font-size: 0.9rem; }
         .contact-footer a { color: #1a1a2e; font-weight: bold; text-decoration: underline; }
+        @media (max-width: 700px) {
+            header { align-items: flex-start; flex-wrap: wrap; gap: 10px; padding: 16px 18px; }
+            header h3 { font-size: 1rem; order: 2; width: calc(100% - 75px); }
+            .back-btn { order: 1; }
+            .container { padding: 28px 16px; }
+            h2 { font-size: 1.35rem; }
+            .statistik-grid { gap: 12px; grid-template-columns: 1fr; margin-bottom: 30px; }
+            .stat-card { padding: 16px; }
+            .stat-card p { font-size: 1.45rem; }
+            .tabel-container { overflow-x: auto; }
+            table { min-width: 680px; }
+            th, td { padding: 12px 14px; }
+        }
     </style>
 </head>
 <body>

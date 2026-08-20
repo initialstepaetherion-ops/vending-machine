@@ -4,155 +4,88 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Etalase Mesin A1 - Lapak Mini</title>
-    
-    <!-- 1. PANGGIL SCRIPT MIDTRANS SNAP DI SINI -->
-    <script type="text/javascript"
-            src="https://app.sandbox.midtrans.com/snap/snap.js"
-            data-client-key="Mid-client-NJdNK-r3RlldIXH_"></script>
-    
+    <script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="Mid-client-NJdNK-r3RlldIXH_"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        body { background: #f4f6f9; color: #333; }
-        header { background: linear-gradient(135deg, #c21564 0%, #290a42 100%); color: white; padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; }
-        .back-btn { color: white; text-decoration: none; font-weight: bold; }
-        .container { padding: 40px 50px; }
-        h2 { margin-bottom: 20px; color: #290a42; }
-        .grid-barang { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
-        .produk-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: relative; padding-bottom: 15px; }
-        .produk-card img { width: 100%; height: 200px; object-fit: cover; }
-        .produk-info { padding: 15px; }
-        .harga { color: #c21564; font-weight: bold; font-size: 1.2rem; margin: 5px 0; }
-        .stok { font-size: 0.85rem; color: #7f8c8d; }
-        .btn-beli { width: 90%; margin: 10px 5%; padding: 10px; background: #290a42; color: white; border: none; border-radius: 25px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-beli:hover { background: #5d2485; }
-        .btn-beli:disabled { background: #bdc3c7; cursor: not-allowed; }
-        .badge-best { position: absolute; top: 10px; right: 10px; background: #f1c40f; color: #000; padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
-        .habis-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 200px; background: rgba(255,255,255,0.6); display: flex; justify-content: center; align-items: center; font-size: 1.5rem; font-weight: bold; color: #c0392b; backdrop-filter: grayscale(100%); }
-        .contact-footer { padding: 24px 20px; text-align: center; color: #666; font-size: 0.9rem; }
-        .contact-footer a { color: #290a42; font-weight: bold; text-decoration: underline; }
+        :root { --ink: #182433; --muted: #6d7988; --blue: #176b87; --mint: #41c7a5; --paper: #f5f8f7; --line: #dce7e6; }
+        * { box-sizing: border-box; margin: 0; }
+        body { min-height: 100vh; background: var(--paper); color: var(--ink); font-family: "Trebuchet MS", "Segoe UI", sans-serif; }
+        header { align-items: center; background: #123b51; color: white; display: flex; gap: 22px; justify-content: space-between; padding: 18px clamp(18px, 5vw, 64px); }
+        header h1 { font-size: clamp(1rem, 2vw, 1.35rem); letter-spacing: .03em; }
+        .back-btn, .cart-button { color: white; text-decoration: none; }
+        .back-btn { font-weight: bold; white-space: nowrap; }
+        .cart-button { background: var(--mint); border: 0; border-radius: 8px; color: #103b3b; cursor: pointer; font-weight: bold; padding: 11px 15px; white-space: nowrap; }
+        .cart-count { background: #f5c451; border-radius: 50%; display: inline-grid; height: 22px; margin-left: 4px; place-items: center; width: 22px; }
+        main { margin: auto; max-width: 1240px; padding: clamp(24px, 5vw, 56px) clamp(16px, 4vw, 44px); width: 100%; }
+        .intro { align-items: end; display: flex; justify-content: space-between; margin-bottom: 28px; gap: 20px; }
+        .intro h2 { font-size: clamp(1.7rem, 4vw, 2.6rem); line-height: 1.05; }
+        .intro p { color: var(--muted); margin-top: 8px; }
+        .grid-barang { display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 245px), 1fr)); }
+        .produk-card { background: white; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 10px 25px rgba(18,59,81,.07); overflow: hidden; position: relative; }
+        .produk-card img { background: #dcefee; display: block; height: 190px; object-fit: cover; width: 100%; }
+        .produk-info { padding: 17px 17px 8px; }
+        .produk-info h3 { font-size: 1.1rem; }
+        .harga { color: var(--blue); font-size: 1.18rem; font-weight: bold; margin: 7px 0; }
+        .stok { color: var(--muted); font-size: .88rem; }
+        .actions { display: grid; gap: 8px; grid-template-columns: 92px 1fr; padding: 10px 17px 17px; }
+        .qty { border: 1px solid var(--line); border-radius: 7px; min-width: 0; padding: 10px; width: 100%; }
+        button { font: inherit; }
+        .btn { border: 0; border-radius: 7px; cursor: pointer; font-weight: bold; padding: 10px 12px; }
+        .btn-cart { background: #dff5ee; color: #126653; }
+        .btn-buy { background: var(--blue); color: white; grid-column: 1 / -1; }
+        .btn:disabled { background: #cbd5d5; color: #65706f; cursor: not-allowed; }
+        .badge-best { background: #f5c451; border-radius: 0 0 0 8px; font-size: .78rem; font-weight: bold; padding: 7px 10px; position: absolute; right: 0; top: 0; }
+        .habis-overlay { align-items: center; background: rgba(255,255,255,.75); color: #b2383d; display: flex; font-weight: bold; height: 190px; justify-content: center; position: absolute; top: 0; width: 100%; }
+        .empty { color: var(--muted); grid-column: 1 / -1; padding: 30px 0; text-align: center; }
+        .modal-backdrop { align-items: center; background: rgba(10,25,35,.58); display: none; inset: 0; justify-content: center; padding: 16px; position: fixed; z-index: 5; }
+        .modal-backdrop.open { display: flex; }
+        .cart-modal { background: white; border-radius: 12px; max-height: min(650px, 90vh); max-width: 560px; overflow: auto; padding: 24px; width: 100%; }
+        .modal-head, .cart-row, .cart-total { align-items: center; display: flex; justify-content: space-between; gap: 14px; }
+        .modal-head { border-bottom: 1px solid var(--line); padding-bottom: 15px; }
+        .close { background: transparent; border: 0; color: var(--muted); cursor: pointer; font-size: 1.4rem; }
+        .cart-row { border-bottom: 1px solid var(--line); padding: 15px 0; }
+        .cart-row small { color: var(--muted); display: block; margin-top: 3px; }
+        .remove { background: transparent; border: 0; color: #b2383d; cursor: pointer; }
+        .cart-total { font-size: 1.15rem; font-weight: bold; padding: 20px 0 14px; }
+        .checkout { background: var(--blue); color: white; width: 100%; }
+        .contact-footer { color: var(--muted); font-size: .88rem; padding: 24px 16px; text-align: center; }
+        .contact-footer a { color: var(--blue); font-weight: bold; }
+        @media (max-width: 600px) { header { flex-wrap: wrap; } header h1 { order: 3; width: 100%; } .intro { display: block; } .intro p { line-height: 1.45; } .produk-card img { height: 165px; } .habis-overlay { height: 165px; } }
     </style>
 </head>
 <body>
-
     <header>
-        <a href="index.html" class="back-btn">← Kembali</a>
-        <h3>Lapak Fakultas Teknik (Mesin A1)</h3>
-        <div>🛒 Keranjang</div>
+        <a class="back-btn" href="index.html">← Kembali</a>
+        <h1>Lapak Fakultas Teknik · Mesin A1</h1>
+        <button class="cart-button" id="openCart" type="button">🛒 Keranjang <span class="cart-count" id="cartCount">0</span></button>
     </header>
-
-    <div class="container">
-        <h2>Pilih Barang Anda</h2>
-        <div class="grid-barang" id="etalase">
-            <p>Memuat data dari Firebase...</p>
-        </div>
+    <main>
+        <section class="intro"><div><h2>Pilih barangmu</h2><p>Atur jumlah, belanja beberapa produk, lalu bayar sekaligus.</p></div></section>
+        <section class="grid-barang" id="etalase"><p class="empty">Memuat data dari Firebase...</p></section>
+    </main>
+    <footer class="contact-footer">Jika ada masalah, hubungi <a href="https://www.tiktok.com/@Aetherion_Gio" target="_blank" rel="noopener noreferrer">TikTok</a> atau <a href="https://www.instagram.com/Aetherion_Gio/" target="_blank" rel="noopener noreferrer">Instagram Aetherion_Gio</a>.</footer>
+    <div class="modal-backdrop" id="cartBackdrop" role="dialog" aria-modal="true" aria-labelledby="cartTitle">
+        <section class="cart-modal">
+            <div class="modal-head"><h2 id="cartTitle">Keranjang belanja</h2><button class="close" id="closeCart" type="button" aria-label="Tutup keranjang">×</button></div>
+            <div id="cartItems"></div>
+            <div class="cart-total"><span>Total</span><span id="cartTotal">Rp 0</span></div>
+            <button class="btn checkout" id="checkoutCart" type="button">Beli dan bayar</button>
+        </section>
     </div>
-
-    <footer class="contact-footer">
-        Jika ada masalah, hubungi
-        <a href="https://www.tiktok.com/@Aetherion_Gio" target="_blank" rel="noopener noreferrer">TikTok</a>
-        atau
-        <a href="https://www.instagram.com/Aetherion_Gio/" target="_blank" rel="noopener noreferrer">Instagram Aetherion_Gio</a>.
-    </footer>
-
     <script>
         let semuaBarang = {};
-
-        async function muatBarang() {
-            const etalase = document.getElementById('etalase');
-            try {
-                const response = await fetch('/api/barang');
-                semuaBarang = await response.json();
-                
-                let terjualTertinggi = 0;
-                let idBestSeller = '';
-                for (let key in semuaBarang) {
-                    if (semuaBarang[key].terjual > terjualTertinggi) {
-                        terjualTertinggi = semuaBarang[key].terjual;
-                        idBestSeller = key;
-                    }
-                }
-
-                etalase.innerHTML = '';
-
-                for (let key in semuaBarang) {
-                    let barang = semuaBarang[key];
-                    let isHabis = barang.stok_sekarang === 0;
-                    let isBestSeller = (key === idBestSeller);
-
-                    let htmlKartu = `
-                        <div class="produk-card">
-                            ${isBestSeller && !isHabis ? '<div class="badge-best">🔥 Paling Banyak Dibeli</div>' : ''}
-                            <img src="${barang.foto_url}" alt="${barang.nama_barang}">
-                            ${isHabis ? '<div class="habis-overlay">STOK HABIS</div>' : ''}
-                            <div class="produk-info">
-                                <h4>${barang.nama_barang}</h4>
-                                <p class="harga">Rp ${barang.harga.toLocaleString('id-ID')}</p>
-                                <p class="stok">Sisa Stok: ${barang.stok_sekarang}</p>
-                            </div>
-                            <!-- Logika baru: Panggil fungsi beliDenganMidtrans -->
-                            <button class="btn-beli" id="btn-${key}" ${isHabis ? 'disabled' : ''} 
-                                onclick="beliDenganMidtrans('${key}', '${barang.nama_barang}', ${barang.harga})">
-                                ${isHabis ? 'HABIS' : 'Beli & Bayar (QRIS)'}
-                            </button>
-                        </div>
-                    `;
-                    etalase.innerHTML += htmlKartu;
-                }
-            } catch (error) {
-                etalase.innerHTML = '<p>Gagal mengambil data.</p>';
-            }
-        }
-
-        // 2. LOGIKA UTAMA MIDTRANS
-        async function beliDenganMidtrans(idSlot, namaBarang, hargaBarang) {
-            const btn = document.getElementById(`btn-${idSlot}`);
-            btn.innerText = "Memuat Pembayaran...";
-            btn.disabled = true;
-
-            try {
-                // A. Minta Token ke Server Kita
-                const resToken = await fetch('/api/buat-transaksi', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id_slot: idSlot, nama_barang: namaBarang, harga: hargaBarang })
-                });
-                const dataToken = await resToken.json();
-
-                if (dataToken.success) {
-                    // B. Munculkan Popup Midtrans menggunakan Token tersebut
-                    window.snap.pay(dataToken.token, {
-                        // C. Jika pembeli sukses membayar
-                        onSuccess: async function(result) {
-                            alert("Pembayaran Berhasil! Memproses mesin...");
-                            
-                            // Tembak API Checkout lama kita untuk memotong stok & memutar mesin
-                            await fetch('/api/checkout', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ id_slot: idSlot })
-                            });
-                            
-                            muatBarang(); // Refresh halaman
-                        },
-                        onPending: function(result) {
-                            alert("Menunggu pembayaran...");
-                        },
-                        onError: function(result) {
-                            alert("Pembayaran gagal!");
-                        },
-                        onClose: function() {
-                            alert("Anda menutup halaman pembayaran sebelum menyelesaikannya.");
-                        }
-                    });
-                }
-            } catch (error) {
-                alert("Terjadi kesalahan jaringan.");
-            } finally {
-                btn.innerText = "Beli & Bayar (QRIS)";
-                btn.disabled = false;
-            }
-        }
-
+        const keranjang = {};
+        const formatRupiah = (value) => `Rp ${Number(value).toLocaleString('id-ID')}`;
+        const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]));
+        const jumlahKeranjang = () => Object.values(keranjang).reduce((total, item) => total + item.quantity, 0);
+        function updateCartCount() { document.getElementById('cartCount').textContent = jumlahKeranjang(); }
+        function tambahKeKeranjang(idSlot, quantity) { const barang = semuaBarang[idSlot]; const nextQuantity = (keranjang[idSlot]?.quantity || 0) + quantity; if (!barang || nextQuantity > Number(barang.stok_sekarang)) return alert('Jumlah melebihi stok yang tersedia.'); keranjang[idSlot] = { quantity: nextQuantity }; updateCartCount(); }
+        function renderCart() { const target = document.getElementById('cartItems'); const ids = Object.keys(keranjang); if (!ids.length) { target.innerHTML = '<p class="empty">Keranjang masih kosong.</p>'; document.getElementById('checkoutCart').disabled = true; } else { target.innerHTML = ids.map((idSlot) => { const item = keranjang[idSlot]; const barang = semuaBarang[idSlot]; return `<div class="cart-row"><div><strong>${escapeHtml(barang.nama_barang)}</strong><small>${item.quantity} × ${formatRupiah(barang.harga)}</small></div><strong>${formatRupiah(item.quantity * barang.harga)}</strong><button class="remove" type="button" data-remove="${idSlot}">Hapus</button></div>`; }).join(''); document.getElementById('checkoutCart').disabled = false; } const total = ids.reduce((sum, idSlot) => sum + keranjang[idSlot].quantity * Number(semuaBarang[idSlot].harga), 0); document.getElementById('cartTotal').textContent = formatRupiah(total); target.querySelectorAll('[data-remove]').forEach((button) => button.addEventListener('click', () => { delete keranjang[button.dataset.remove]; updateCartCount(); renderCart(); })); }
+        function openCart() { renderCart(); document.getElementById('cartBackdrop').classList.add('open'); }
+        function closeCart() { document.getElementById('cartBackdrop').classList.remove('open'); }
+        async function bayar(items, clearAfterPayment) { try { const response = await fetch('/api/buat-transaksi', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items }) }); const data = await response.json(); if (!data.success) throw new Error(data.error || 'Transaksi gagal dibuat'); window.snap.pay(data.token, { onSuccess: async () => { const checkout = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items }) }); const result = await checkout.json(); if (!result.success) throw new Error(result.error); if (clearAfterPayment) Object.keys(keranjang).forEach((idSlot) => delete keranjang[idSlot]); alert('Pembayaran berhasil. Mesin sedang menyiapkan barangmu.'); closeCart(); updateCartCount(); muatBarang(); }, onPending: () => alert('Pembayaran masih menunggu konfirmasi.'), onError: () => alert('Pembayaran gagal.'), onClose: () => {} }); } catch (error) { alert(error.message || 'Terjadi kesalahan jaringan.'); } }
+        function renderProducts() { const etalase = document.getElementById('etalase'); const ids = Object.keys(semuaBarang); const best = ids.reduce((winner, id) => Number(semuaBarang[id].terjual) > Number(semuaBarang[winner]?.terjual || 0) ? id : winner, ''); etalase.innerHTML = ids.length ? ids.map((idSlot) => { const barang = semuaBarang[idSlot]; const habis = Number(barang.stok_sekarang) < 1; return `<article class="produk-card">${idSlot === best && !habis ? '<div class="badge-best">Paling banyak dibeli</div>' : ''}<img src="${escapeHtml(barang.foto_url)}" alt="${escapeHtml(barang.nama_barang)}" onerror="this.src='https://via.placeholder.com/500x350?text=Produk'"><div class="produk-info"><h3>${escapeHtml(barang.nama_barang)}</h3><p class="harga">${formatRupiah(barang.harga)}</p><p class="stok">Sisa stok: ${barang.stok_sekarang}</p></div>${habis ? '<div class="habis-overlay">STOK HABIS</div>' : `<div class="actions"><input class="qty" id="qty-${idSlot}" type="number" min="1" max="${barang.stok_sekarang}" value="1" aria-label="Jumlah ${escapeHtml(barang.nama_barang)}"><button class="btn btn-cart" data-add="${idSlot}" type="button">+ Keranjang</button><button class="btn btn-buy" data-buy="${idSlot}" type="button">Beli sekarang</button></div>`}</article>`; }).join('') : '<p class="empty">Belum ada barang tersedia.</p>'; etalase.querySelectorAll('[data-add]').forEach((button) => button.addEventListener('click', () => { const quantity = Number(document.getElementById(`qty-${button.dataset.add}`).value); if (quantity > 0) tambahKeKeranjang(button.dataset.add, quantity); })); etalase.querySelectorAll('[data-buy]').forEach((button) => button.addEventListener('click', () => { const idSlot = button.dataset.buy; const quantity = Number(document.getElementById(`qty-${idSlot}`).value); if (quantity > 0) bayar([{ id_slot: idSlot, quantity }], false); })); }
+        async function muatBarang() { try { const response = await fetch('/api/barang'); semuaBarang = await response.json(); renderProducts(); updateCartCount(); } catch (error) { document.getElementById('etalase').innerHTML = '<p class="empty">Gagal mengambil data barang.</p>'; } }
+        document.getElementById('openCart').addEventListener('click', openCart); document.getElementById('closeCart').addEventListener('click', closeCart); document.getElementById('checkoutCart').addEventListener('click', () => bayar(Object.entries(keranjang).map(([id_slot, item]) => ({ id_slot, quantity: item.quantity })), true)); document.getElementById('cartBackdrop').addEventListener('click', (event) => { if (event.target.id === 'cartBackdrop') closeCart(); });
         muatBarang();
     </script>
 </body>

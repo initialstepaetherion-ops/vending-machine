@@ -25,6 +25,16 @@
         #previewFoto { max-width: 150px; max-height: 150px; border-radius: 8px; display: none; margin: 0 auto; object-fit: cover; }
         .contact-footer { padding: 24px 20px; text-align: center; color: #666; font-size: 0.9rem; }
         .contact-footer a { color: #4a1c6a; font-weight: bold; text-decoration: underline; }
+        @media (max-width: 600px) {
+            header { align-items: flex-start; flex-wrap: wrap; gap: 10px; padding: 16px 18px; }
+            header h3 { font-size: 1rem; order: 3; width: 100%; }
+            header div { font-size: .85rem; }
+            .container { padding: 24px 16px; }
+            .dashboard-card { padding: 22px 16px; }
+            h2 { font-size: 1.35rem; line-height: 1.25; }
+            .alert-box { line-height: 1.45; }
+            input, select, .btn-save { font-size: 1rem; min-height: 46px; }
+        }
     </style>
 </head>
 <body>

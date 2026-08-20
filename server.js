@@ -53,9 +53,9 @@ const auth = getAuth();
 const app = express();
 
 let snap = new midtransClient.Snap({
-  isProduction: true,
-    serverKey: process.env.MIDTRANS_SERVER_KEY,
-    clientKey: process.env.MIDTRANS_CLIENT_KEY
+  isProduction: process.env.MIDTRANS_IS_PRODUCTION === 'true',
+  serverKey: process.env.MIDTRANS_SERVER_KEY,
+  clientKey: process.env.MIDTRANS_CLIENT_KEY
 });
 
 app.use(cors());
@@ -155,38 +155,87 @@ app.get('/api/barang', async (req, res) => {
 });
 
 app.post('/api/checkout', async (req, res) => {
-  const { id_slot } = req.body;
+  const requestedItems = Array.isArray(req.body.items)
+    ? req.body.items
+    : [{ id_slot: req.body.id_slot, quantity: 1 }];
+
   try {
-    const snapshot = await db.ref(`produk/mesin_id_A1/${id_slot}`).once('value');
-    const barang = snapshot.val();
-    if (barang.stok_sekarang > 0) {
-      await db.ref(`produk/mesin_id_A1/${id_slot}`).update({
-        stok_sekarang: barang.stok_sekarang - 1,
-        terjual: barang.terjual + 1
-      });
-      await db.ref('kontrol_iot/mesin_id_A1').set({
-        status: "MENUNGGU_MESIN",
-        target_slot: id_slot
-      });
-      res.json({ success: true, message: "LUNAS!" });
-    } else {
-      res.status(400).json({ success: false, message: "Stok habis!" });
+    const items = requestedItems.map((item) => ({
+      id_slot: String(item.id_slot || ''),
+      quantity: Number(item.quantity || 1)
+    }));
+
+    if (!items.length || items.some((item) => !/^slot_[1-4]$/.test(item.id_slot)
+      || !Number.isInteger(item.quantity) || item.quantity < 1)) {
+      return res.status(400).json({ success: false, error: 'Daftar barang tidak valid' });
     }
+
+    const productSnapshot = await db.ref('produk/mesin_id_A1').once('value');
+    const products = productSnapshot.val() || {};
+    for (const item of items) {
+      const product = products[item.id_slot];
+      if (!product || Number(product.stok_sekarang) < item.quantity) {
+        return res.status(400).json({ success: false, error: `Stok ${item.id_slot} tidak mencukupi` });
+      }
+    }
+
+    for (const item of items) {
+      const productRef = db.ref(`produk/mesin_id_A1/${item.id_slot}`);
+      const transactionResult = await productRef.transaction((product) => {
+        if (!product || Number(product.stok_sekarang) < item.quantity) return;
+        product.stok_sekarang = Number(product.stok_sekarang) - item.quantity;
+        product.terjual = Number(product.terjual || 0) + item.quantity;
+        return product;
+      });
+      if (!transactionResult.committed) {
+        return res.status(400).json({ success: false, error: `Stok ${item.id_slot} baru saja berubah` });
+      }
+    }
+
+    await db.ref('kontrol_iot/mesin_id_A1').set({
+      status: 'MENUNGGU_MESIN',
+      target_slot: items[0].id_slot,
+      queue_items: items
+    });
+    res.json({ success: true, message: 'LUNAS!' });
   } catch (error) {
     res.status(500).json({ success: false, error: "Gagal memproses" });
   }
 });
 
 app.post('/api/buat-transaksi', async (req, res) => {
-  const { id_slot, nama_barang, harga } = req.body;
-  const order_id = "LAPAK-" + id_slot + "-" + Date.now();
-  let parameter = {
-    "transaction_details": { "order_id": order_id, "gross_amount": harga },
-    "item_details": [{ "id": id_slot, "price": harga, "quantity": 1, "name": nama_barang }]
-  };
   try {
+    const requestedItems = Array.isArray(req.body.items)
+      ? req.body.items
+      : [{ id_slot: req.body.id_slot, quantity: 1 }];
+    const productSnapshot = await db.ref('produk/mesin_id_A1').once('value');
+    const products = productSnapshot.val() || {};
+    const items = requestedItems.map((item) => {
+      const idSlot = String(item.id_slot || '');
+      const product = products[idSlot];
+      const quantity = Number(item.quantity || 1);
+      if (!/^slot_[1-4]$/.test(idSlot) || !product || !Number.isInteger(quantity) || quantity < 1
+        || Number(product.stok_sekarang) < quantity) return null;
+      return {
+        id: idSlot,
+        price: Number(product.harga),
+        quantity,
+        name: String(product.nama_barang || idSlot).slice(0, 50)
+      };
+    });
+
+    if (!items.length || items.some((item) => !item)) {
+      return res.status(400).json({ success: false, error: 'Barang tidak tersedia atau stok tidak mencukupi' });
+    }
+
+    const grossAmount = items.reduce((total, item) => total + item.price * item.quantity, 0);
+    const order_id = "LAPAK-A1-" + Date.now();
+    const parameter = {
+      transaction_details: { order_id, gross_amount: grossAmount },
+      item_details: items
+    };
     const transaction = await snap.createTransaction(parameter);
-    res.json({ success: true, token: transaction.token });
+    res.json({ success: true, token: transaction.token, order_id });
   } catch (error) {
     res.status(500).json({ success: false, error: "Gagal memanggil Midtrans" });
   }
