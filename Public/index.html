@@ -13,6 +13,10 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
             background: linear-gradient(135deg, #c21564 0%, #290a42 100%);
             color: white;
@@ -237,8 +241,8 @@
             <span>V</span> LAPAK MINI
         </div>
         <div class="nav-links">
-            <a href="#">Cara Kerja ˇ</a>
-            <a href="#">Lokasi Mesin ˇ</a>
+            <a href="#cara-kerja">Cara Kerja</a>
+            <a href="#cara-membeli">Cara Membeli</a>
             <button class="btn-outline" onclick="window.location.href='admin.html'">LOGIN ADMIN</button>
         </div>
     </nav>
@@ -289,8 +293,8 @@
     </div>
 
     <!-- === BAGIAN CARA KERJA === -->
-    <div class="how-it-works">
-        <h2>⚙️ Bagaimana Sistem Pintar Ini Bekerja?</h2>
+    <div class="how-it-works" id="cara-kerja">
+        <h2>⚙️ Bagaimana Sistem Cerdas Ini Bekerja?</h2>
         <div class="steps-grid">
             <div class="step-card">
                 <div class="step-number">01</div>
@@ -316,7 +320,7 @@
     </div>
 
     <!-- === BAGIAN PANDUAN PEMBELIAN === -->
-    <div class="how-to-buy">
+    <div class="how-to-buy" id="cara-membeli">
         <h2>🛍️ Panduan Cara Membeli Barang</h2>
         <div class="buy-steps-grid">
             <div class="buy-step-card">
