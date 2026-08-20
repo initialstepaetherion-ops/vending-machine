@@ -223,7 +223,8 @@ app.post('/api/reset-slot', async (req, res) => {
   }
 });
 
+// Perbaikan utama di sini: Menggunakan process.env.PORT agar kompatibel dengan Railway
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`[BERHASIL] Server berjalan di http://localhost:${PORT}`);
+  console.log(`[BERHASIL] Server berjalan di port ${PORT}`);
 });
