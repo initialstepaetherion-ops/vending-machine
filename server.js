@@ -62,7 +62,7 @@ app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 
-const uploadDir = path.join(__dirname, 'public', 'uploads');
+const uploadDir = path.join(__dirname, 'Public', 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -128,10 +128,10 @@ const cekAksesAdmin = (req, res, next) => {
 };
 
 app.get('/admin.html', cekAksesAdmin, (req, res) => {
-  res.sendFile(__dirname + '/public/admin.html');
+  res.sendFile(__dirname + '/Public/admin.html');
 });
 app.get('/penjual.html', cekAksesAdmin, (req, res) => {
-  res.sendFile(__dirname + '/public/penjual.html');
+  res.sendFile(__dirname + '/Public/penjual.html');
 });
 
 app.post('/api/logout', (req, res) => {
@@ -139,7 +139,7 @@ app.post('/api/logout', (req, res) => {
   res.json({ success: true });
 });
 
-app.use(express.static('public'));
+app.use(express.static('Public'));
 
 app.get('/api/status', (req, res) => {
   res.send('Server Utama Vending Machine Aktif!');
