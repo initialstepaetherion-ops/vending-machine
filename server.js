@@ -11,33 +11,40 @@ const admin = require("firebase-admin");
 const { getAuth } = require('firebase-admin/auth');
 const { getDatabase } = require('firebase-admin/database');
 
-// Mengambil private key secara aman dengan dukungan Base64 penuh
-let firebasePrivateKey = process.env.FIREBASE_PRIVATE_KEY;
-if (process.env.FIREBASE_PRIVATE_KEY_BASE64) {
-  firebasePrivateKey = Buffer.from(process.env.FIREBASE_PRIVATE_KEY_BASE64, 'base64').toString('utf8');
-} else if (firebasePrivateKey) {
-  firebasePrivateKey = firebasePrivateKey
-    .trim()
-    .replace(/^['"]|['"]$/g, '')
-    .replace(/\\n/g, '\n');
-}
-const missingFirebaseVariables = ['FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL']
-  .filter((name) => !process.env[name]);
+// Gunakan environment variable di deployment, atau service account lokal saat development.
+let firebaseCredentials;
+const firebaseKeyPath = path.join(__dirname, 'firebase-key.json');
+const hasFirebaseEnvironment = process.env.FIREBASE_PROJECT_ID
+  && process.env.FIREBASE_CLIENT_EMAIL
+  && (process.env.FIREBASE_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY_BASE64);
 
-if (!firebasePrivateKey) {
-  missingFirebaseVariables.push('FIREBASE_PRIVATE_KEY atau FIREBASE_PRIVATE_KEY_BASE64');
-}
+if (hasFirebaseEnvironment) {
+  let firebasePrivateKey = process.env.FIREBASE_PRIVATE_KEY;
+  if (process.env.FIREBASE_PRIVATE_KEY_BASE64) {
+    firebasePrivateKey = Buffer.from(process.env.FIREBASE_PRIVATE_KEY_BASE64, 'base64').toString('utf8');
+  } else {
+    firebasePrivateKey = firebasePrivateKey
+      .trim()
+      .replace(/^['"]|['"]$/g, '')
+      .replace(/\\n/g, '\n');
+  }
 
-if (missingFirebaseVariables.length > 0) {
-  throw new Error(`Konfigurasi Firebase tidak lengkap: ${missingFirebaseVariables.join(', ')}`);
-}
-
-admin.initializeApp({
-  credential: admin.cert({
+  firebaseCredentials = {
     projectId: process.env.FIREBASE_PROJECT_ID,
     privateKey: firebasePrivateKey,
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL
-  }),
+  };
+} else if (fs.existsSync(firebaseKeyPath)) {
+  firebaseCredentials = JSON.parse(fs.readFileSync(firebaseKeyPath, 'utf8'));
+} else {
+  throw new Error(
+    'Konfigurasi Firebase tidak ditemukan. Isi FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, '
+    + 'FIREBASE_PRIVATE_KEY (atau FIREBASE_PRIVATE_KEY_BASE64), atau sediakan firebase-key.json.'
+  );
+}
+
+admin.initializeApp({
+  credential: admin.cert(firebaseCredentials),
   databaseURL: "https://vending-machine-a267f-default-rtdb.asia-southeast1.firebasedatabase.app"
 });
 
