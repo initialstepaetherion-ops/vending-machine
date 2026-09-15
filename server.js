@@ -142,7 +142,7 @@ app.post('/api/logout', (req, res) => {
 app.use(express.static('Public'));
 
 app.get('/api/status', (req, res) => {
-  res.send('Server Utama Vending Machine Aktif!');
+  res.send('Server Utama Vending Machine Aktif! (Versi v2 - Tes Array)');
 });
 
 app.get('/api/barang', async (req, res) => {
@@ -192,11 +192,13 @@ app.post('/api/checkout', async (req, res) => {
       }
     }
 
+    console.log("[DEBUG NODEJS] Data items:", JSON.stringify(items));
     await db.ref('kontrol_iot/mesin_id_A1').set({
       status: 'MENUNGGU_MESIN',
       target_slot: items[0].id_slot,
       queue_items: items
     });
+    console.log("[DEBUG NODEJS] Push Firebase sukses!");
     res.json({ success: true, message: 'LUNAS!' });
   } catch (error) {
     res.status(500).json({ success: false, error: "Gagal memproses" });
