@@ -4,6 +4,7 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const midtransClient = require('midtrans-client');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
@@ -13,6 +14,7 @@ const { getDatabase } = require('firebase-admin/database');
 
 // Gunakan environment variable di deployment, atau service account lokal saat development.
 let firebaseCredentials;
+let firebaseCredentialsSource;
 const firebaseKeyPath = path.join(__dirname, 'firebase-key.json');
 const hasFirebaseEnvironment = process.env.FIREBASE_PROJECT_ID
   && process.env.FIREBASE_CLIENT_EMAIL
@@ -34,8 +36,10 @@ if (hasFirebaseEnvironment) {
     privateKey: firebasePrivateKey,
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL
   };
+  firebaseCredentialsSource = 'environment variables';
 } else if (fs.existsSync(firebaseKeyPath)) {
   firebaseCredentials = JSON.parse(fs.readFileSync(firebaseKeyPath, 'utf8'));
+  firebaseCredentialsSource = 'firebase-key.json';
 } else {
   throw new Error(
     'Konfigurasi Firebase tidak ditemukan. Isi FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, '
@@ -43,10 +47,14 @@ if (hasFirebaseEnvironment) {
   );
 }
 
+const firebaseDatabaseUrl = process.env.FIREBASE_DATABASE_URL
+  || "https://vending-machine-a267f-default-rtdb.asia-southeast1.firebasedatabase.app";
+
 admin.initializeApp({
   credential: admin.cert(firebaseCredentials),
-  databaseURL: "https://vending-machine-a267f-default-rtdb.asia-southeast1.firebasedatabase.app"
+  databaseURL: firebaseDatabaseUrl
 });
+console.log(`[Firebase] Admin initialized for project ${firebaseCredentials.projectId || firebaseCredentials.project_id} using ${firebaseCredentialsSource}`);
 
 const db = getDatabase();
 const auth = getAuth();
@@ -154,58 +162,88 @@ app.get('/api/barang', async (req, res) => {
   }
 });
 
-app.post('/api/checkout', async (req, res) => {
-  const requestedItems = Array.isArray(req.body.items)
-    ? req.body.items
-    : [{ id_slot: req.body.id_slot, quantity: 1 }];
+app.post(['/api/notification', '/api/payment-notification'], async (req, res) => {
+  const data = req.body || {};
+  const { order_id: orderId, status_code: statusCode, gross_amount: grossAmount, signature_key: signatureKey } = data;
+  const serverKey = process.env.MIDTRANS_SERVER_KEY;
+
+  if (!serverKey || typeof orderId !== 'string' || !/^LAPAK-A1-\d+$/.test(orderId)
+    || typeof statusCode !== 'string' || typeof grossAmount !== 'string'
+    || typeof signatureKey !== 'string') {
+    return res.status(400).send('Notifikasi tidak lengkap');
+  }
+
+  const expectedSignature = crypto.createHash('sha512')
+    .update(orderId + statusCode + grossAmount + serverKey)
+    .digest('hex');
+  const expectedBuffer = Buffer.from(expectedSignature, 'hex');
+  const receivedBuffer = Buffer.from(signatureKey, 'hex');
+  if (expectedBuffer.length !== receivedBuffer.length || !crypto.timingSafeEqual(expectedBuffer, receivedBuffer)) {
+    console.log('Bahaya: Ada yang mencoba memalsukan pembayaran!');
+    return res.status(403).send('Akses ditolak');
+  }
+
+  const paymentSucceeded = data.transaction_status === 'settlement'
+    || (data.transaction_status === 'capture' && data.fraud_status === 'accept');
+  const paymentStatus = paymentSucceeded
+    ? 'success'
+    : ['cancel', 'deny', 'expire'].includes(data.transaction_status) ? 'failed' : 'pending';
 
   try {
-    const items = requestedItems.map((item) => ({
-      id_slot: String(item.id_slot || ''),
-      quantity: Number(item.quantity || 1)
-    }));
-
-    if (!items.length || items.some((item) => !/^slot_[1-4]$/.test(item.id_slot)
-      || !Number.isInteger(item.quantity) || item.quantity < 1)) {
-      return res.status(400).json({ success: false, error: 'Daftar barang tidak valid' });
+    const orderRef = db.ref(`payment_orders/${orderId}`);
+    const orderSnapshot = await orderRef.once('value');
+    const order = orderSnapshot.val();
+    if (!order || Number(order.gross_amount) !== Number(grossAmount)) {
+      return res.status(404).send('Pesanan tidak ditemukan');
     }
-
-    const productSnapshot = await db.ref('produk/mesin_id_A1').once('value');
-    const products = productSnapshot.val() || {};
-    for (const item of items) {
-      const product = products[item.id_slot];
-      if (!product || Number(product.stok_sekarang) < item.quantity) {
-        return res.status(400).json({ success: false, error: `Stok ${item.id_slot} tidak mencukupi` });
-      }
-    }
-
-    for (const item of items) {
-      const productRef = db.ref(`produk/mesin_id_A1/${item.id_slot}`);
-      const transactionResult = await productRef.transaction((product) => {
-        if (!product || Number(product.stok_sekarang) < item.quantity) return;
-        product.stok_sekarang = Number(product.stok_sekarang) - item.quantity;
-        product.terjual = Number(product.terjual || 0) + item.quantity;
-        return product;
+    const transactionRef = db.ref(`transactions/${orderId}`);
+    if (!paymentSucceeded) {
+      await transactionRef.transaction((currentTransaction) => {
+        if (!currentTransaction || currentTransaction.status === 'success') return;
+        currentTransaction.status = paymentStatus;
+        currentTransaction.updatedAt = Date.now();
+        return currentTransaction;
       });
-      if (!transactionResult.committed) {
-        return res.status(400).json({ success: false, error: `Stok ${item.id_slot} baru saja berubah` });
-      }
+      return res.status(200).send('OK');
+    }
+    if (order.status === 'PROCESSED' || order.status === 'PROCESSING') {
+      return res.status(200).send('OK');
     }
 
-    console.log("[DEBUG NODEJS] Data items:", JSON.stringify(items));
-    await db.ref('kontrol_iot/mesin_id_A1').set({
-      status: 'MENUNGGU_MESIN',
-      target_slot: items[0].id_slot,
-      queue_items: items
+    const claim = await orderRef.transaction((currentOrder) => {
+      if (!currentOrder || currentOrder.status !== 'PENDING') return;
+      currentOrder.status = 'PROCESSING';
+      return currentOrder;
     });
-    console.log("[DEBUG NODEJS] Push Firebase sukses!");
-    res.json({ success: true, message: 'LUNAS!' });
+    if (!claim.committed) return res.status(200).send('OK');
+
+    const productRef = db.ref('produk/mesin_id_A1');
+    const inventoryUpdate = await productRef.transaction((products) => {
+      if (!products || order.items.some((item) => !products[item.id_slot]
+        || Number(products[item.id_slot].stok_sekarang) < item.quantity)) return;
+      for (const item of order.items) {
+        products[item.id_slot].stok_sekarang = Number(products[item.id_slot].stok_sekarang) - item.quantity;
+        products[item.id_slot].terjual = Number(products[item.id_slot].terjual || 0) + item.quantity;
+      }
+      return products;
+    });
+    if (!inventoryUpdate.committed) {
+      await orderRef.update({ status: 'STOCK_ERROR' });
+      console.error(`Stok tidak mencukupi untuk pesanan ${orderId}`);
+      return res.status(500).send('Stok pesanan perlu diperiksa');
+    }
+
+    await transactionRef.update({ status: 'success', updatedAt: Date.now() });
+    await orderRef.update({ status: 'PROCESSED', processed_at: Date.now() });
+    console.log(`Pembayaran terverifikasi untuk Order ID: ${orderId}; status transaksi diperbarui.`);
+    return res.status(200).send('OK');
   } catch (error) {
-    res.status(500).json({ success: false, error: "Gagal memproses" });
+    console.error('Gagal memproses notifikasi pembayaran:', error);
+    return res.status(500).send('Gagal memproses notifikasi');
   }
 });
 
-app.post('/api/buat-transaksi', async (req, res) => {
+app.post(['/api/create-transaction', '/api/buat-transaksi'], async (req, res) => {
   try {
     const requestedItems = Array.isArray(req.body.items)
       ? req.body.items
@@ -237,7 +275,28 @@ app.post('/api/buat-transaksi', async (req, res) => {
       item_details: items
     };
     const transaction = await snap.createTransaction(parameter);
-    res.json({ success: true, token: transaction.token, order_id });
+    const storedItems = items.map((item) => ({ id_slot: item.id, quantity: item.quantity }));
+    await Promise.all([
+      db.ref(`payment_orders/${order_id}`).set({
+        status: 'PENDING',
+        gross_amount: grossAmount,
+        items: storedItems
+      }),
+      db.ref(`transactions/${order_id}`).set({
+        amount: grossAmount,
+        status: 'pending',
+        dispensed: false,
+        items: storedItems,
+        createdAt: Date.now()
+      })
+    ]);
+    res.json({
+      success: true,
+      status: 'success',
+      token: transaction.token,
+      redirect_url: transaction.redirect_url,
+      order_id
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: "Gagal memanggil Midtrans" });
   }
@@ -277,5 +336,5 @@ app.post('/api/reset-slot', async (req, res) => {
 // Perbaikan utama di sini: Menggunakan process.env.PORT agar kompatibel dengan Railway
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`[BERHASIL] Server berjalan di port ${PORT}`);
+  console.log(`Server Lapak Mini A1 berjalan di port ${PORT}`);
 });
